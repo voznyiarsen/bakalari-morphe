@@ -1,0 +1,62 @@
+{
+  "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
+  "version": "1.0.0",
+  "patches": [
+    {
+      "name": "Disable sponsored ads",
+      "description": "Blocks sponsored ad pop-ups by targeting the ad CDN URLs (campaign.bakalari.cz, campaign-dev.bakalari.cz, netglade.cz). Version-agnostic.",
+      "default": true,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "cz.bakalari.mobile",
+          "name": "Bakaláři OnLine",
+          "description": null,
+          "apkFileType": "APK_REQUIRED",
+          "appIconColor": "#FF0033",
+          "signatures": [
+            "c390dec3bc2a50f91c9f63d8be5ab0deb98381b5348f0e32d011c7ced6791d34"
+          ],
+          "targets": [
+            {
+              "version": "4.2.0",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": 26,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Disable sponsored ads",
+      "description": "Blocks sponsored ad pop-ups by targeting the ad CDN URLs (campaign.bakalari.cz, campaign-dev.bakalari.cz, netglade.cz). Version-agnostic.",
+      "default": true,
+      "dependencies": [],
+      "compatiblePackages": [
+        {
+          "packageName": "cz.bakalari.mobile",
+          "name": "Bakaláři OnLine",
+          "description": null,
+          "apkFileType": "APKM",
+          "appIconColor": "#FF0033",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "4.2.0",
+              "versionCodes": {
+                "ARM64_V8A": 5204
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    }
+  ]
+}
