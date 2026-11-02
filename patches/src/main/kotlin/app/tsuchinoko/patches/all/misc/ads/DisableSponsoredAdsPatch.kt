@@ -7,19 +7,16 @@
 package app.tsuchinoko.patches.all.misc.ads
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
-import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.patch.bytecodePatch
-import app.morphe.util.indexOfFirstInstructionOrThrow
-import com.android.tools.smali.dexlib2.Opcode
 import app.tsuchinoko.patches.all.misc.ads.Constants.COMPATIBILITY_BAKALARI
 
 /**
  * Disables sponsored ad pop-ups by blocking requests to the ad-serving CDN URLs.
  *
- * The patch hooks the Firebase Performance URL tracking method that processes every outgoing
- * request URL. After the URL's host is extracted via [okhttp3.HttpUrl.h], the patch checks it
- * against a blocklist of ad CDN domains. If a match is found, a [RuntimeException] is thrown,
- * which causes the connection setup to fail and prevents the ad from being loaded.
+ * The patch hooks the Firebase Performance URL tracking method at its entry point, where
+ * [p1] holds the outgoing request URL string. The URL is checked against a blocklist of ad
+ * CDN domains; on match, a [RuntimeException] is thrown, causing the connection setup to fail
+ * and preventing the ad from being loaded.
  *
  * The patch targets the CDN URLs directly (campaign.bakalari.cz, campaign-dev.bakalari.cz,
  * netglade.cz), making it app-version agnostic: these are stable backend infrastructure
@@ -37,23 +34,10 @@ val disableSponsoredAdsPatch =
         execute {
             val method = AdUrlFingerprint.method
 
-            // Find the instruction that extracts the host from the parsed URL.
-            // At this point, p1 holds the host string (e.g. "campaign.bakalari.cz").
-            val hostInsIndex = method.indexOfFirstInstructionOrThrow(
-                fieldAccess(
-                    definingClass = "Lokhttp3/HttpUrl;",
-                    name = "h",
-                    type = "Ljava/lang/String;",
-                    opcode = Opcode.IGET_OBJECT
-                )
-            )
-
+            // Insert at method entry: p1 holds the URL string parameter.
             method.addInstructionsWithLabels(
-                hostInsIndex + 1,
+                0,
                 """
-                    # p1 = host string at this injection point
-
-                    # --- Block campaign.bakalari.cz ---
                     const-string v2, "campaign.bakalari.cz"
                     invoke-virtual {p1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
                     move-result v2
@@ -64,7 +48,6 @@ val disableSponsoredAdsPatch =
                     throw v2
                     :skip_campaign_bakalari_cz
 
-                    # --- Block campaign-dev.bakalari.cz ---
                     const-string v2, "campaign-dev.bakalari.cz"
                     invoke-virtual {p1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
                     move-result v2
@@ -75,7 +58,6 @@ val disableSponsoredAdsPatch =
                     throw v2
                     :skip_campaign_dev_bakalari_cz
 
-                    # --- Block netglade.cz ---
                     const-string v2, "netglade.cz"
                     invoke-virtual {p1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
                     move-result v2

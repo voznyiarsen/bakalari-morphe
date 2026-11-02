@@ -7,16 +7,15 @@
 package app.tsuchinoko.patches.all.misc.ads
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 
 /**
  * Fingerprint for the Firebase Performance URL tracking method that receives every outgoing
- * request URL. The method parses the URL with [okhttp3.HttpUrl.Companion.d] and extracts the
- * host via [okhttp3.HttpUrl.h], making it the ideal interception point for blocking ad CDN
- * domains regardless of app version (the CDN URLs are stable backend infrastructure).
+ * request URL. The method parses the URL with [okhttp3.HttpUrl.Companion.d], making it the
+ * ideal interception point for blocking ad CDN domains regardless of app version (the CDN
+ * URLs are stable backend infrastructure).
  */
 internal object AdUrlFingerprint : Fingerprint(
     returnType = "V",
@@ -30,13 +29,6 @@ internal object AdUrlFingerprint : Fingerprint(
             parameters = listOf("Ljava/lang/String;"),
             returnType = "Lokhttp3/HttpUrl;",
             opcode = Opcode.INVOKE_STATIC
-        ),
-        // Host field extraction - unique to the URL tracking method.
-        fieldAccess(
-            definingClass = "Lokhttp3/HttpUrl;",
-            name = "h",
-            type = "Ljava/lang/String;",
-            opcode = Opcode.IGET_OBJECT
         )
     )
 )
