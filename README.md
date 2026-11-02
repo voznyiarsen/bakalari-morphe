@@ -1,4 +1,4 @@
-# Bakal\u00e1\u0159i Morphe Patches
+# Bakaláři Morphe Patches
 
 Morphe patches for **cz.bakalari.mobile** (Bakaláři OnLine) that disable sponsored ad pop-ups.
 
