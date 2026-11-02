@@ -6,7 +6,7 @@
 
 package app.tsuchinoko.patches.all.misc.ads
 
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.tsuchinoko.patches.all.misc.ads.Constants.COMPATIBILITY_BAKALARI
 
@@ -35,39 +35,39 @@ val disableSponsoredAdsPatch =
             val method = AdUrlFingerprint.method
 
             // Insert at method entry: p1 holds the URL string parameter.
-            method.addInstructionsWithLabels(
+            method.addInstructions(
                 0,
                 """
-                    const-string v2, "campaign.bakalari.cz"
-                    invoke-virtual {p1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
-                    move-result v2
-                    if-eqz v2, :skip_campaign_bakalari_cz
-                    new-instance v2, Ljava/lang/RuntimeException;
-                    const-string v3, "Sponsored ad domain blocked: campaign.bakalari.cz"
-                    invoke-direct {v2, v3}, Ljava/lang/RuntimeException;-><init>(Ljava/lang/String;)V
-                    throw v2
-                    :skip_campaign_bakalari_cz
+const-string v2, "campaign.bakalari.cz"
+invoke-virtual {p1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+move-result v2
+if-eqz v2, :skip_campaign_bakalari_cz
+new-instance v2, Ljava/lang/RuntimeException;
+const-string v3, "Sponsored ad domain blocked: campaign.bakalari.cz"
+invoke-direct {v2, v3}, Ljava/lang/RuntimeException;-><init>(Ljava/lang/String;)V
+throw v2
+:skip_campaign_bakalari_cz
 
-                    const-string v2, "campaign-dev.bakalari.cz"
-                    invoke-virtual {p1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
-                    move-result v2
-                    if-eqz v2, :skip_campaign_dev_bakalari_cz
-                    new-instance v2, Ljava/lang/RuntimeException;
-                    const-string v3, "Sponsored ad domain blocked: campaign-dev.bakalari.cz"
-                    invoke-direct {v2, v3}, Ljava/lang/RuntimeException;-><init>(Ljava/lang/String;)V
-                    throw v2
-                    :skip_campaign_dev_bakalari_cz
+const-string v2, "campaign-dev.bakalari.cz"
+invoke-virtual {p1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+move-result v2
+if-eqz v2, :skip_campaign_dev_bakalari_cz
+new-instance v2, Ljava/lang/RuntimeException;
+const-string v3, "Sponsored ad domain blocked: campaign-dev.bakalari.cz"
+invoke-direct {v2, v3}, Ljava/lang/RuntimeException;-><init>(Ljava/lang/String;)V
+throw v2
+:skip_campaign_dev_bakalari_cz
 
-                    const-string v2, "netglade.cz"
-                    invoke-virtual {p1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
-                    move-result v2
-                    if-eqz v2, :skip_netglade_cz
-                    new-instance v2, Ljava/lang/RuntimeException;
-                    const-string v3, "Sponsored ad domain blocked: netglade.cz"
-                    invoke-direct {v2, v3}, Ljava/lang/RuntimeException;-><init>(Ljava/lang/String;)V
-                    throw v2
-                    :skip_netglade_cz
-                """.trimIndent()
+const-string v2, "netglade.cz"
+invoke-virtual {p1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+move-result v2
+if-eqz v2, :skip_netglade_cz
+new-instance v2, Ljava/lang/RuntimeException;
+const-string v3, "Sponsored ad domain blocked: netglade.cz"
+invoke-direct {v2, v3}, Ljava/lang/RuntimeException;-><init>(Ljava/lang/String;)V
+throw v2
+:skip_netglade_cz
+""".trimIndent()
             )
         }
     }
