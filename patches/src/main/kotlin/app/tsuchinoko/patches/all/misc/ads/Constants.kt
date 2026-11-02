@@ -22,10 +22,19 @@ object Constants {
                 listOf(
                     AppTarget(
                         version = "4.2.0",
-                        versionCodes =
-                            mapOf(
-                                ARM64_V8A to 5204,
-                            ),
+                        versionCodes = null,
+                    ),
+                    AppTarget(
+                        version = "4.3.0",
+                        versionCodes = null,
+                    ),
+                    AppTarget(
+                        version = "4.3.1",
+                        versionCodes = null,
+                    ),
+                    AppTarget(
+                        version = "4.3.2",
+                        versionCodes = null,
                     ),
                 ),
         )
