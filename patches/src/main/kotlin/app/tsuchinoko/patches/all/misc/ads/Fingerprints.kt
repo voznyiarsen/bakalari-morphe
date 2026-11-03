@@ -10,14 +10,53 @@ import app.morphe.patcher.Fingerprint
 import com.android.tools.smali.dexlib2.AccessFlags
 
 /**
- * Fingerprint for [android.webkit.WebViewClient.shouldOverrideUrlLoading].
- *
- * The [webview_flutter] plugin's WebViewClient ([va/e0]) handles URL navigation
- * for WebViews in the app. Sponsored ad pop-ups may be loaded in a WebView, making
- * this the ideal interception point for blocking ad domains at the WebView level.
+ * Fingerprint for va/e0.shouldOverrideUrlLoading - webview_flutter's WebViewClient
+ * used by the main Flutter WebView.
  */
-internal object WebViewClientFingerprint : Fingerprint(
+internal object VaE0Fingerprint : Fingerprint(
     definingClass = "Lva/e0;",
+    name = "shouldOverrideUrlLoading",
+    returnType = "Z",
+    parameters = listOf(
+        "Landroid/webkit/WebView;",
+        "Landroid/webkit/WebResourceRequest;"
+    ),
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL)
+)
+
+/**
+ * Fingerprint for ra/h.shouldOverrideUrlLoading - WebViewActivity's WebViewClient.
+ */
+internal object RhFingerprint : Fingerprint(
+    definingClass = "Lra/h;",
+    name = "shouldOverrideUrlLoading",
+    returnType = "Z",
+    parameters = listOf(
+        "Landroid/webkit/WebView;",
+        "Landroid/webkit/WebResourceRequest;"
+    ),
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL)
+)
+
+/**
+ * Fingerprint for ra/i.shouldOverrideUrlLoading - WebViewActivity's delegate WebViewClient.
+ */
+internal object RiFingerprint : Fingerprint(
+    definingClass = "Lra/i;",
+    name = "shouldOverrideUrlLoading",
+    returnType = "Z",
+    parameters = listOf(
+        "Landroid/webkit/WebView;",
+        "Landroid/webkit/WebResourceRequest;"
+    ),
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL)
+)
+
+/**
+ * Fingerprint for va/X.shouldOverrideUrlLoading - delegate WebViewClient.
+ */
+internal object VaXFingerprint : Fingerprint(
+    definingClass = "Lva/X;",
     name = "shouldOverrideUrlLoading",
     returnType = "Z",
     parameters = listOf(
