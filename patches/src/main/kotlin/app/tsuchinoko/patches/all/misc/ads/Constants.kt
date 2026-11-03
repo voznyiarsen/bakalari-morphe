@@ -4,7 +4,7 @@
  * See the included NOTICE file for GPLv3 §7(b) terms that apply to this code.
  */
 
-package app.tsuchinoko.patches.all.misc.telemetry
+package app.tsuchinoko.patches.all.misc.ads
 
 import app.morphe.patcher.patch.ApkFileType
 import app.morphe.patcher.patch.AppTarget

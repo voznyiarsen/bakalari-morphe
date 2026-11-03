@@ -1,10 +1,10 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "patches": [
     {
-      "name": "Disable telemetry",
-      "description": "Blocks sponsored ads and telemetry by targeting destination CDN URLs at the HttpURLConnection level. Version-agnostic.",
+      "name": "Disable sponsored ads",
+      "description": "Blocks sponsored ad pop-ups by targeting ad CDN URLs at the WebView level (campaign.bakalari.cz, campaign-dev.bakalari.cz, netglade.cz). Version-agnostic.",
       "default": true,
       "dependencies": [],
       "compatiblePackages": [
