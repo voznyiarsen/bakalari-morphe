@@ -24,5 +24,5 @@ internal object WebViewClientFingerprint : Fingerprint(
         "Landroid/webkit/WebView;",
         "Landroid/webkit/WebResourceRequest;"
     ),
-    accessFlags = listOf(AccessFlags.PUBLIC)
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL)
 )
