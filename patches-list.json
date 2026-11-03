@@ -1,57 +1,10 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "patches": [
     {
-      "name": "Disable sponsored ads",
-      "description": "Blocks sponsored ad pop-ups by targeting the ad CDN URLs (campaign.bakalari.cz, campaign-dev.bakalari.cz, netglade.cz). Version-agnostic.",
-      "default": true,
-      "dependencies": [],
-      "compatiblePackages": [
-        {
-          "packageName": "cz.bakalari.mobile",
-          "name": "Bakaláři OnLine",
-          "description": null,
-          "apkFileType": "APKM",
-          "appIconColor": "#FF0033",
-          "signatures": null,
-          "targets": [
-            {
-              "version": "4.2.0",
-              "versionCodes": null,
-              "isExperimental": false,
-              "minSdk": null,
-              "description": null
-            },
-            {
-              "version": "4.3.0",
-              "versionCodes": null,
-              "isExperimental": false,
-              "minSdk": null,
-              "description": null
-            },
-            {
-              "version": "4.3.1",
-              "versionCodes": null,
-              "isExperimental": false,
-              "minSdk": null,
-              "description": null
-            },
-            {
-              "version": "4.3.2",
-              "versionCodes": null,
-              "isExperimental": false,
-              "minSdk": null,
-              "description": null
-            }
-          ]
-        }
-      ],
-      "options": []
-    },
-    {
       "name": "Disable telemetry",
-      "description": "Blocks telemetry and analytics by targeting the CDN URLs (app-measurement.com, firebase-settings.crashlytics.com, seq.service.bakalari.cz, bakalari-dec2b.firebasestorage.app). Version-agnostic.",
+      "description": "Blocks sponsored ads and telemetry by targeting destination CDN URLs at the HttpURLConnection level. Version-agnostic.",
       "default": true,
       "dependencies": [],
       "compatiblePackages": [

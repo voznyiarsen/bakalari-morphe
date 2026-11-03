@@ -7,28 +7,20 @@
 package app.tsuchinoko.patches.all.misc.telemetry
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.methodCall
 import com.android.tools.smali.dexlib2.AccessFlags
-import com.android.tools.smali.dexlib2.Opcode
 
 /**
- * Fingerprint for the Firebase Performance URL tracking method that receives every outgoing
- * request URL. The method parses the URL with [okhttp3.HttpUrl.Companion.d], making it the
- * ideal interception point for blocking telemetry CDN domains regardless of app version
- * (the CDN URLs are stable backend infrastructure).
+ * Fingerprint for [java.net.HttpURLConnection.getResponseCode].
+ *
+ * This method is called for every HTTP response read through HttpURLConnection on Android,
+ * including requests made by Dart's [HttpClient] (which the Flutter app uses via Dio).
+ * At this point, [HttpURLConnection.getURL] returns the request URL, making it the ideal
+ * interception point for blocking ad and telemetry domains regardless of app version.
  */
-internal object TelemetryUrlFingerprint : Fingerprint(
-    returnType = "V",
-    parameters = listOf("Ljava/lang/String;"),
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
-    filters = listOf(
-        // URL parsing via OkHttp - unique to the URL tracking method.
-        methodCall(
-            definingClass = "Lokhttp3/HttpUrl\$Companion;",
-            name = "d",
-            parameters = listOf("Ljava/lang/String;"),
-            returnType = "Lokhttp3/HttpUrl;",
-            opcode = Opcode.INVOKE_STATIC
-        )
-    )
+internal object HttpUrlConnectionFingerprint : Fingerprint(
+    definingClass = "Ljava/net/HttpURLConnection;",
+    name = "getResponseCode",
+    returnType = "I",
+    parameters = listOf(),
+    accessFlags = listOf(AccessFlags.PUBLIC)
 )
