@@ -24,17 +24,17 @@ This repository contains scripts to patch the APK directly by replacing ad-servi
 
 | File | Purpose |
 |------|---------|
-| `patch_apk.py` | Python script to patch `libapp.so` domains |
-| `repack_apk.py` | Script to repack the patched `.so` back into the APK |
 | `README.md` | This documentation |
+| `patch_apk.py` | Python script to patch `libapp.so` |
+| `repack_apk.py` | Script to repack patched `.so` back into APK |
+| `repack_and_sign.sh` | Full pipeline script |
 
 ## Usage
 
 ### Step 1: Extract the APK
 
-If you have an XAPK, extract the base APK first:
-
 ```bash
+# If you have an XAPK, extract the base APK first
 unzip -o -j cz.bakalari.mobile_4.3.2.xapk cz.bakalari.mobile.apk -d ./apk/
 ```
 
@@ -50,10 +50,11 @@ cd ..
 ### Step 3: Patch libapp.so
 
 ```bash
-python3 patch_apk.py libapp.so libapp.so.patched
+python3 patch_apk.py lib/arm64-v8a/libapp.so libapp.so.patched
 ```
 
-This replaces:
+This replaces the ad-serving CDN domain names with `localhost` followed by null bytes:
+
 - `campaign.bakalari.cz` → `localhost`
 - `campaign-dev.bakalari.cz` → `localhost`
 - `netglade.cz` → `localhost`
@@ -88,23 +89,30 @@ adb uninstall cz.bakalari.mobile
 adb install cz.bakalari.mobile_4.3.2_patched.apk
 ```
 
+Or use the all-in-one script:
+
+```bash
+./repack_and_sign.sh cz.bakalari.mobile_4.3.2.apk libapp.so.patched cz.bakalari.mobile_4.3.2_patched.apk
+```
+
 ## How It Works
 
-The Flutter app constructs ad request URLs at runtime from string constants embedded in `libapp.so`. This patch replaces the ad-serving domain names with `localhost` followed by null bytes, making the URLs malformed:
+The Flutter app constructs ad request URLs at runtime from string constants embedded in `libapp.so`. This patch replaces the ad-serving domain names with `localhost` followed by null bytes, causing all ad requests to fail silently:
 
 ```
 Before: https://campaign.bakalari.cz/bannerinfo/...
-After:  https://localhost\x00...\x00
+After:  https://localhost\x00\x00.../bannerinfo/...
 ```
 
 The app attempts to connect to `localhost` which doesn't serve ads, so the ad request fails silently and no pop-up appears.
+
+## Why Morphe Patches Don't Work Here
+
+Morphe patches modify DEX bytecode, but this app's ad logic is in Dart code compiled to `libapp.so`. There is no DEX code that constructs or loads ad URLs — all networking goes through Dart's `dart:io` → `java.net.HttpURLConnection` (a system class not present in DEX). Binary patching of the native library is the only viable approach.
 
 ## Limitations
 
 - Patches **known** ad URLs. If the app updates and changes CDN endpoints, re-patch.
 - Signed with a test key — may show signature warnings on installation.
 - Only blocks the specific ad domains listed above; other analytics/telemetry endpoints are not affected.
-
-## Why Morphe Patches Don't Work Here
-
-Morphe patches modify DEX bytecode, but this app's ad logic is in Dart code compiled to `libapp.so`. There is no DEX code that constructs or loads ad URLs — all networking goes through Dart's `dart:io` → `java.net.HttpURLConnection` (a system class not present in DEX). Binary patching of the native library is the only viable approach.
+- Must uninstall original app before installing (signature mismatch).

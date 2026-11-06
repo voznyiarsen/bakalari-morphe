@@ -4,20 +4,22 @@ patch_apk.py — Patch cz.bakalari.mobile libapp.so to block ad-serving CDN URLs
 
 Replaces ad-serving domain names with 'localhost' followed by null bytes,
 causing all ad requests to fail silently.
+
+Patch offsets were determined by reverse engineering libapp.so (arm64-v8a)
+with radare2. Only the domain name portion of each URL is replaced — the
+'https://' prefix is preserved intact.
 """
 
 import sys
 import os
-import struct
 
 
 # Ad-serving URLs and their offsets in libapp.so (arm64-v8a)
-# Offsets were determined by reverse engineering libapp.so with radare2
+# Offsets point to the start of the domain name (after 'https://')
 PATCHES = [
-    # (offset, domain, original_string_for_validation)
-    (0x0007d022, "campaign.bakalari.cz", "https://campaign.bakalari.cz"),
-    (0x0023e3be, "campaign-dev.bakalari.cz", "https://campaign-dev.bakalari.cz"),
-    (0x00079dce, "netglade.cz", "https://netglade.cz"),
+    (0x0007d02a, "campaign.bakalari.cz", "campaign.bakalari.cz"),
+    (0x0023e3c6, "campaign-dev.bakalari.cz", "campaign-dev.bakalari.cz"),
+    (0x00079dd6, "netglade.cz", "netglade.cz"),
     (0x001b0c70, "netglade.cz", "netglade.cz"),
 ]
 
@@ -30,8 +32,8 @@ def validate_so(path):
     found = 0
     for offset, domain, original in PATCHES:
         f.seek(offset)
-        chunk = f.read(len(original) + 10)
-        if original.encode() in chunk:
+        chunk = f.read(len(original))
+        if chunk == original.encode():
             print(f"[OK] Found {domain} at 0x{offset:08x}")
             found += 1
         else:
@@ -41,19 +43,19 @@ def validate_so(path):
 
 
 def patch_so(input_path, output_path):
-    """Patch libapp.so by replacing ad domains with localhost + null bytes."""
+    """Patch libapp.so by replacing ad domain names with localhost + null bytes."""
     with open(input_path, 'rb') as f:
         data = bytearray(f.read())
 
     for offset, domain, original in PATCHES:
-        # Verify the original string is at this offset
-        actual = data[offset:offset + len(original)]
-        if actual != original.encode():
+        # Verify the original domain string is at this offset
+        actual = data[offset:offset + len(domain)]
+        if actual != domain.encode():
             print(f"[ERROR] Mismatch at 0x{offset:08x}: "
-                  f"expected {original!r}, got {actual!r}")
+                  f"expected {domain!r}, got {actual!r}")
             return False
 
-        # Replace domain with 'localhost' + null bytes
+        # Replace domain with 'localhost' + null bytes (keep same length)
         replacement = b'localhost' + b'\x00' * (len(domain) - len('localhost'))
         data[offset:offset + len(domain)] = replacement
 
