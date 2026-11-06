@@ -1,10 +1,69 @@
-# Bakaláři Morphe Patches — APK Patching Scripts
+# Bakaláři Morphe Patches — Ad Blocking for cz.bakalari.mobile
 
-Morphe patches for **cz.bakalari.mobile** (Bakaláři OnLine) cannot block sponsored ad pop-ups because this is a **Flutter application** where all ad logic lives in Dart AOT-compiled native code (`libapp.so`), not in DEX bytecode that Morphe can patch.
+## ⚠️ Important: Morphe patches do NOT work for this app
 
-This repository contains scripts to patch the APK directly by replacing ad-serving CDN URLs with `localhost` in the native library.
+**cz.bakalari.mobile** is a **Flutter application**. All ad-serving logic is in Dart code compiled to `libapp.so` (native library), NOT in DEX bytecode. Morphe patches can only modify DEX bytecode, so they cannot block ads in this app.
 
-## What Gets Blocked
+Additionally, direct binary patching of `libapp.so` **crashes the app** because it corrupts the Flutter snapshot (Dart's AOT-compiled code). The app crashes during `FlutterJNI.runBundleAndSnapshotFromLibrary` at startup.
+
+## Solution: Frida Runtime Instrumentation
+
+The only viable approach is to use **Frida** to hook the HTTP client at runtime and block ad requests before they are sent.
+
+### Prerequisites
+
+- Rooted Android device or emulator with Frida server running
+- `frida-tools` installed on your computer (`pip install frida-tools`)
+- The original (unpatched) `cz.bakalari.mobile` APK installed
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `cancel_ads.js` | Frida script that blocks ad-serving CDN URLs |
+| `README.md` | This documentation |
+
+### Usage
+
+#### Step 1: Install the original APK
+
+```bash
+adb install cz.bakalari.mobile_4.3.2.apk
+```
+
+#### Step 2: Start Frida server on the device
+
+```bash
+# On the device (as root):
+frida-server &
+```
+
+Or use `frida-ps` to verify Frida server is running:
+```bash
+frida-ps -U
+```
+
+#### Step 3: Run the patching script
+
+```bash
+frida -U -f cz.bakalari.mobile -l cancel_ads.js --no-pause
+```
+
+This will:
+1. Launch the app with Frida attached
+2. Hook all HTTP request methods
+3. Block any request to `campaign.bakalari.cz`, `campaign-dev.bakalari.cz`, or `netglade.cz`
+4. Log all blocked requests to the console
+
+#### Alternative: Attach to a running app
+
+If the app is already running:
+
+```bash
+frida -U -f cz.bakalari.mobile -l cancel_ads.js
+```
+
+### What Gets Blocked
 
 | Domain | Purpose |
 |--------|---------|
@@ -12,107 +71,38 @@ This repository contains scripts to patch the APK directly by replacing ad-servi
 | `campaign-dev.bakalari.cz` | Dev ad API |
 | `netglade.cz` | Ad network |
 
-## Prerequisites
+### Hook Locations
 
-- Python 3
-- `zip` (for APK repacking)
-- `jarsigner` / `keytool` (from Android SDK or JDK) — for re-signing
-- `adb` — for installation (optional)
-- `radare2` (`r2`) — for analysis (optional, already done)
+The Frida script hooks multiple levels of the HTTP stack to ensure all ad requests are caught:
 
-## Files
+1. `okhttp3.OkHttpClient.newCall()` - Main OkHttp client
+2. `com.google.firebase.perf.network.FirebasePerfOkHttpClient.execute()` - Firebase Performance OkHttp wrapper
+3. `c8/f.j(String)` - Firebase Performance URL tracking (called for every outgoing request)
+4. `java.net.HttpURLConnection.connect()` - Direct Java HTTP connections
+5. `com.google.firebase.perf.network.FirebasePerfHttpClient.execute()` - Firebase Performance Apache HttpClient wrapper
+6. `okhttp3.HttpUrl.Companion.d(String)` - URL parsing
+7. `okhttp3.Call.execute()` - Direct method call execution
 
-| File | Purpose |
-|------|---------|
-| `README.md` | This documentation |
-| `patch_apk.py` | Python script to patch `libapp.so` |
-| `repack_apk.py` | Script to repack patched `.so` back into APK |
-| `repack_and_sign.sh` | Full pipeline script |
+### Why This Works
 
-## Usage
+- **Flutter apps** use Dart code compiled to `libapp.so`
+- Dart's `http` package uses `dart:io.HttpClient` on Android
+- This maps to either `okhttp3.OkHttpClient` or `java.net.HttpURLConnection`
+- Frida hooks at the Java level, intercepting requests before they leave the app
+- No binary modification is needed, so the Flutter snapshot remains intact
 
-### Step 1: Extract the APK
+### Troubleshooting
 
-```bash
-# If you have an XAPK, extract the base APK first
-unzip -o -j cz.bakalari.mobile_4.3.2.xapk cz.bakalari.mobile.apk -d ./apk/
-```
+**App crashes on startup:**
+- Make sure you installed the **original** APK, not a binary-patched one
+- Binary patching `libapp.so` corrupts the Flutter snapshot and causes crashes
 
-### Step 2: Extract libapp.so
+**Ads still appear:**
+- Check the Frida console output for "BLOCKED" messages
+- If no blocked messages appear, the app may use a different HTTP library not covered by the hooks
+- Add additional URL patterns to `BLOCKED_DOMAINS` if new ad domains appear
 
-```bash
-mkdir -p extracted
-cd extracted
-unzip -o -j ../apk/cz.bakalari.mobile.apk lib/arm64-v8a/libapp.so
-cd ..
-```
-
-### Step 3: Patch libapp.so
-
-```bash
-python3 patch_apk.py lib/arm64-v8a/libapp.so libapp.so.patched
-```
-
-This replaces the ad-serving CDN domain names with `localhost` followed by null bytes:
-
-- `campaign.bakalari.cz` → `localhost`
-- `campaign-dev.bakalari.cz` → `localhost`
-- `netglade.cz` → `localhost`
-
-### Step 4: Repack the APK
-
-```bash
-python3 repack_apk.py cz.bakalari.mobile_4.3.2.apk libapp.so.patched cz.bakalari.mobile_4.3.2_patched.apk
-```
-
-### Step 5: Re-sign the APK
-
-```bash
-# Generate keystore (one-time)
-keytool -genkeypair -keystore mykeys.keystore -alias mykey \
-  -keyalg RSA -keysize 2048 -validity 10000 \
-  -storepass android -keypass android \
-  -dname "CN=MorPatches, O=MorPatches, C=US"
-
-# Sign the APK
-jarsigner -keystore mykeys.keystore -storepass android \
-  -keypass android cz.bakalari.mobile_4.3.2_patched.apk mykey
-```
-
-### Step 6: Install
-
-```bash
-# Uninstall original first (signature mismatch)
-adb uninstall cz.bakalari.mobile
-
-# Install patched APK
-adb install cz.bakalari.mobile_4.3.2_patched.apk
-```
-
-Or use the all-in-one script:
-
-```bash
-./repack_and_sign.sh cz.bakalari.mobile_4.3.2.apk libapp.so.patched cz.bakalari.mobile_4.3.2_patched.apk
-```
-
-## How It Works
-
-The Flutter app constructs ad request URLs at runtime from string constants embedded in `libapp.so`. This patch replaces the ad-serving domain names with `localhost` followed by null bytes, causing all ad requests to fail silently:
-
-```
-Before: https://campaign.bakalari.cz/bannerinfo/...
-After:  https://localhost\x00\x00.../bannerinfo/...
-```
-
-The app attempts to connect to `localhost` which doesn't serve ads, so the ad request fails silently and no pop-up appears.
-
-## Why Morphe Patches Don't Work Here
-
-Morphe patches modify DEX bytecode, but this app's ad logic is in Dart code compiled to `libapp.so`. There is no DEX code that constructs or loads ad URLs — all networking goes through Dart's `dart:io` → `java.net.HttpURLConnection` (a system class not present in DEX). Binary patching of the native library is the only viable approach.
-
-## Limitations
-
-- Patches **known** ad URLs. If the app updates and changes CDN endpoints, re-patch.
-- Signed with a test key — may show signature warnings on installation.
-- Only blocks the specific ad domains listed above; other analytics/telemetry endpoints are not affected.
-- Must uninstall original app before installing (signature mismatch).
+**Frida can't attach:**
+- Ensure the device is rooted and Frida server is running
+- Try `frida-ps -U` to verify Frida server is working
+- Some apps have anti-Frida detection; you may need frida-server with anti-detection patches
